@@ -1,0 +1,70 @@
+{
+  "skill_name": "java-perf-doctor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我的 takeout-app 容器最近 CPU 一直在 90% 以上，接口响应也变得很慢，帮我看看是什么原因",
+      "expected_output": "执行完整诊断流程：发现容器内 Java 进程 PID、运行 top -H 找到高 CPU 线程、转换 TID 为十六进制、在 jstack 中定位对应线程的调用栈（精确到类名和行号），并输出结构化诊断报告",
+      "assertions": [
+        {
+          "name": "执行了 docker exec 命令采集数据",
+          "description": "Claude 实际调用了 Bash 工具执行 docker exec 命令，而不只是给出命令让用户自己跑"
+        },
+        {
+          "name": "完成了 TID 十六进制转换",
+          "description": "对高 CPU 线程的十进制 TID 进行了 0x 十六进制转换，并在 jstack 中搜索对应 nid"
+        },
+        {
+          "name": "输出包含类名和行号",
+          "description": "CPU 热点分析结果精确到 Java 类名和行号，如 com.example.Foo.bar(Foo.java:123)"
+        },
+        {
+          "name": "输出了结构化诊断报告",
+          "description": "最终输出包含【问题摘要】【CPU热点线程】【JVM优化建议】等结构化章节"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我的订单服务 order-service 容器卡死了，所有请求都在 pending，怀疑是死锁，帮我确认一下",
+      "expected_output": "执行 jstack -l 采集线程堆栈，在输出中搜索死锁信息，如果找到死锁则输出涉及的线程名、持有的锁地址、等待的锁地址，以及各线程的调用栈（精确到类名和行号）",
+      "assertions": [
+        {
+          "name": "使用了 jstack -l 参数",
+          "description": "jstack 命令包含 -l 参数以获取锁信息"
+        },
+        {
+          "name": "搜索并报告了死锁信息",
+          "description": "在 jstack 输出中搜索 Found.*deadlock 并报告结果（有或无）"
+        },
+        {
+          "name": "死锁报告包含调用栈",
+          "description": "如果发现死锁，报告中包含每个死锁线程的调用栈顶部信息"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我的 Spring Boot 应用跑在 my-spring-app 容器里，GC 日志显示 Full GC 越来越频繁，帮我看看 JVM 参数配置有什么问题，该怎么调",
+      "expected_output": "执行 jstat -gcutil 采集 GC 运行数据，执行 jcmd VM.flags 获取当前 JVM 参数，结合两者分析并给出具体的 JVM 参数调优建议（包含具体参数值，如 -Xmx2g、-XX:+UseG1GC）",
+      "assertions": [
+        {
+          "name": "采集了 jstat -gcutil 数据",
+          "description": "实际执行了 jstat -gcutil 命令并读取了 GC 数据"
+        },
+        {
+          "name": "采集了当前 JVM flags",
+          "description": "执行了 jcmd VM.flags 获取当前 JVM 配置"
+        },
+        {
+          "name": "优化建议包含具体参数值",
+          "description": "给出的 JVM 调优建议有具体的参数和数值，而非只是'增大堆内存'等模糊建议"
+        },
+        {
+          "name": "分析了 GC 收集器选择",
+          "description": "报告中提到了 GC 收集器（如 G1GC、ZGC、ParallelGC）的选择建议"
+        }
+      ]
+    }
+  ]
+}
